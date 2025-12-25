@@ -18,9 +18,20 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Map<String, MessageModel> conversationSummaries() {
+    return _repo.conversationSummaries();
+  }
+
   Future<void> sendMessage(String userId, MessageModel message) async {
     await _repo.sendMessage(userId, message);
     messages.add(message);
     notifyListeners();
+
+    // fetch a remote reply and append
+    final reply = await _repo.fetchRemoteReply(userId);
+    if (reply != null) {
+      messages.add(reply);
+      notifyListeners();
+    }
   }
 }

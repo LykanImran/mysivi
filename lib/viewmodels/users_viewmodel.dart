@@ -17,4 +17,10 @@ class UsersViewModel extends ChangeNotifier {
     loading = false;
     notifyListeners();
   }
+
+  Future<void> addUser(String name) async {
+    final u = await _repo.addUser(name);
+    users.insert(0, u);
+    notifyListeners();
+  }
 }

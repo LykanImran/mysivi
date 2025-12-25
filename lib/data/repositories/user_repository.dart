@@ -12,4 +12,12 @@ class UserRepository {
     await Future.delayed(const Duration(milliseconds: 200));
     return List<UserModel>.from(_users);
   }
+
+  Future<UserModel> addUser(String name) async {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final user = UserModel(id: id, name: name, avatarUrl: null);
+    _users.insert(0, user);
+    await Future.delayed(const Duration(milliseconds: 50));
+    return user;
+  }
 }

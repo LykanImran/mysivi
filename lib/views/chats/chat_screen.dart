@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../widgets/chat_bubble.dart';
@@ -41,7 +44,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: vm.messages.length,
                     itemBuilder: (context, index) {
                       final m = vm.messages[index];
-                      return ChatBubble(text: m.content, isMe: m.isMe);
+                      final avatar = m.isMe
+                          ? 'M'
+                          : (widget.userName.isNotEmpty
+                                ? widget.userName[0]
+                                : '?');
+                      return ChatBubble(
+                        text: m.content,
+                        isMe: m.isMe,
+                        avatarInitial: avatar,
+                        onLongPress: () => _showDefinition(context, m.content),
+                      );
                     },
                   ),
           ),
@@ -78,6 +91,51 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showDefinition(BuildContext context, String message) async {
+    final word = message
+        .split(RegExp(r"\s+"))[0]
+        .replaceAll(RegExp(r"[^a-zA-Z]"), '')
+        .toLowerCase();
+    final bc = context;
+    if (word.isEmpty) {
+      showModalBottomSheet(
+        context: bc,
+        builder: (_) => const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('No word found'),
+        ),
+      );
+      return;
+    }
+
+    // call dictionaryapi.dev
+    final uri = Uri.parse(
+      'https://api.dictionaryapi.dev/api/v2/entries/en/$word',
+    );
+    String result = 'No definition found for "$word"';
+    try {
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List<dynamic>;
+        final first = list.first as Map<String, dynamic>;
+        final meanings = first['meanings'] as List<dynamic>;
+        if (meanings.isNotEmpty) {
+          final defs = meanings.first['definitions'] as List<dynamic>;
+          if (defs.isNotEmpty) {
+            result = defs.first['definition'] as String? ?? result;
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: bc,
+      builder: (_) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text(result)),
     );
   }
 }
