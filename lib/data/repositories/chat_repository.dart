@@ -8,7 +8,9 @@ class ChatRepository {
 
   Future<List<MessageModel>> fetchMessages(String userId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _conversations[userId] ?? _generateSample(userId);
+    final stored = _conversations[userId] ?? _generateSample(userId);
+    // Return a copy so callers don't accidentally mutate the internal storage
+    return List<MessageModel>.from(stored);
   }
 
   /// Fetches a remote reply from an open API and returns it as a MessageModel.
